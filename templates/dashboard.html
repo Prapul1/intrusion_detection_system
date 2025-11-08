@@ -1,0 +1,74 @@
+<!-- templates/dashboard.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Live IDS Dashboard</title>
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 18px; background:#f6f8fa; }
+    h1 { margin-bottom: 6px; }
+    table { border-collapse: collapse; width: 100%; max-width: 900px; background:white; }
+    th, td { padding: 8px 10px; border:1px solid #ddd; text-align:left; }
+    tr:nth-child(even){ background:#f9fafb; }
+    .attack { color: white; background:#c53030; padding:4px 7px; border-radius:4px; }
+    .normal { color: white; background:#2f855a; padding:4px 7px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <h1>🔴 Live Attack Predictions</h1>
+  <p id="status">Connecting...</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Prediction(s)</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    const socket = io.connect('http://localhost:5000');
+    const rows = document.getElementById('rows');
+    const status = document.getElementById('status');
+
+    socket.on('connect', () => {
+      status.textContent = 'Connected — waiting for live predictions';
+      console.log('connected to server');
+    });
+
+    socket.on('disconnect', () => {
+      status.textContent = 'Disconnected';
+    });
+
+    socket.on('update_dashboard', function(data) {
+      console.log('update_dashboard', data);
+      const ts = data.timestamp || new Date().toLocaleString();
+      const preds = data.prediction || [];
+      const meta = (data.meta && data.meta.src) ? data.meta.src : '-';
+
+      // build label string with colored chips
+      const labels = preds.map(p => {
+        const cls = (String(p).toLowerCase().includes('attack') ? 'attack' : 'normal');
+        return `<span class="${cls}">${p}</span>`;
+      }).join(' ');
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${ts}</td><td>${labels}</td><td>${meta}</td>`;
+      rows.insertBefore(tr, rows.firstChild);
+
+      // keep only last 200 rows
+      while (rows.children.length > 200) rows.removeChild(rows.lastChild);
+    });
+
+    // for debugging
+    socket.on('connect_error', (err) => {
+      console.error('socket connect_error', err);
+      status.textContent = 'Connection error';
+    });
+  </script>
+</body>
+</html>

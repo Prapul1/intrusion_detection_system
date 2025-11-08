@@ -1,0 +1,7 @@
+# Ignore the data folder
+data/
+
+# Ignore IDE files
+.idea/
+processed/
+models/

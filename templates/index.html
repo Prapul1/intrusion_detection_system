@@ -1,0 +1,73 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>IDS Live Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+  <style>
+    body{font-family: Inter, Arial; padding:18px;}
+    table{border-collapse:collapse;width:100%}
+    th,td{padding:6px;border:1px solid #ddd;text-align:left;font-size:13px}
+    .attack{background:#ffdddd}
+    .benign{background:#ddffdd}
+    #stream{height:300px;overflow:auto;border:1px solid #eee;padding:8px}
+  </style>
+</head>
+<body>
+  <h2>IDS Live Dashboard</h2>
+  <p>Server time: <span id="time">--</span></p>
+
+  <div>
+    <strong>Recent packets (live)</strong>
+    <div id="stream"></div>
+  </div>
+
+  <h3>Last 50 predictions</h3>
+  <table id="table">
+    <thead><tr>
+      <th>Time</th><th>src</th><th>dst</th><th>len</th><th>proto</th><th>iat</th><th>flags</th><th>prediction</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const socket = io();
+
+    function addRow(rec) {
+      const tbody = document.querySelector("#table tbody");
+      const tr = document.createElement("tr");
+      tr.className = rec.prediction && rec.prediction.toLowerCase().includes('attack') ? 'attack' : 'benign';
+      tr.innerHTML = `<td>${new Date(rec.timestamp).toLocaleTimeString()}</td>
+        <td>${rec.src_port}</td><td>${rec.dst_port}</td><td>${rec.packet_length}</td>
+        <td>${rec.protocol}</td><td>${rec.inter_arrival_time.toFixed(3)}</td><td>${rec.tcp_flags}</td>
+        <td>${rec.prediction}</td>`;
+      tbody.insertBefore(tr, tbody.firstChild);
+      // trim to 50
+      while (tbody.children.length > 50) tbody.removeChild(tbody.lastChild);
+      // stream text
+      const stream = document.getElementById("stream");
+      const line = `[${new Date(rec.timestamp).toLocaleTimeString()}] ${rec.prediction} src:${rec.src_port} dst:${rec.dst_port} len:${rec.packet_length}`;
+      const p = document.createElement("div"); p.textContent = line;
+      stream.insertBefore(p, stream.firstChild);
+      while (stream.children.length > 100) stream.removeChild(stream.lastChild);
+    }
+
+    socket.on("connect", () => {
+      console.log("connected");
+    });
+
+    socket.on("recent_batch", (arr) => {
+      arr.slice(-50).forEach(addRow);
+    });
+
+    socket.on("new_packet", (rec) => {
+      addRow(rec);
+    });
+
+    setInterval(()=> {
+      document.getElementById("time").textContent = new Date().toLocaleString();
+    }, 1000);
+  </script>
+</body>
+</html>
