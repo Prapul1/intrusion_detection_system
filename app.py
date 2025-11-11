@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, render_template
-from flask_socketio import SocketIO
+# 1. This import is new and fixes the error
+from flask_socketio import SocketIO, emit
 import json
 
 app = Flask(__name__)
@@ -27,10 +28,10 @@ def handle_new_prediction(data):
     live_data.append(payload)
     print("📊 New data received:", payload)
 
-    # Emit update to connected clients (don't use broadcast kwarg; not supported in some versions)
-    socketio.emit('update_dashboard', payload)
+    # 2. This line is changed from 'socketio.emit' to just 'emit'
+    emit('update_dashboard', payload, broadcast=True)
 
 if __name__ == '__main__':
     print("🚀 Flask dashboard running on http://localhost:5000")
-    # use eventlet/gevent if available for better concurrency; this will work with default dev server too
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # 3. This 'use_reloader=False' stops the server from restarting
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)

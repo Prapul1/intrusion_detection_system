@@ -5,3 +5,11 @@ matplotlib
 seaborn
 joblib
 streamlit
+flask
+flask-socketio
+python-socketio[client]
+pandas
+numpy
+scikit-learn
+joblib
+eventlet

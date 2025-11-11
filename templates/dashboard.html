@@ -18,6 +18,8 @@
 <body>
   <h1>🔴 Live Attack Predictions</h1>
   <p id="status">Connecting...</p>
+  <!-- Removed the buttons, as detector.py runs automatically -->
+  <br>
 
   <table>
     <thead>
@@ -36,7 +38,7 @@
     const status = document.getElementById('status');
 
     socket.on('connect', () => {
-      status.textContent = 'Connected — waiting for live predictions';
+      status.textContent = 'Connected — receiving live predictions...';
       console.log('connected to server');
     });
 
@@ -47,8 +49,16 @@
     socket.on('update_dashboard', function(data) {
       console.log('update_dashboard', data);
       const ts = data.timestamp || new Date().toLocaleString();
-      const preds = data.prediction || [];
-      const meta = (data.meta && data.meta.src) ? data.meta.src : '-';
+
+      // Handle both single and multiple predictions
+      let preds = [];
+      if (Array.isArray(data.prediction)) {
+          preds = data.prediction;
+      } else if (data.prediction) {
+          preds = [data.prediction];
+      }
+
+      const meta = (data.meta && data.meta.src) ? `${data.meta.src} → ${data.meta.dst}` : '-';
 
       // build label string with colored chips
       const labels = preds.map(p => {
@@ -69,6 +79,9 @@
       console.error('socket connect_error', err);
       status.textContent = 'Connection error';
     });
+
+    // Removed the startSniffing() and stopSniffing() functions
+
   </script>
 </body>
 </html>
