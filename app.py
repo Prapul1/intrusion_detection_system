@@ -1,37 +1,56 @@
 # app.py
-from flask import Flask, render_template
-# 1. This import is new and fixes the error
-from flask_socketio import SocketIO, emit
-import json
+
+from flask import Flask, render_template_string
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-live_data = []
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IDS Dashboard</title>
+</head>
+<body>
+    <h2>Intrusion Detection System</h2>
+    <h3>Status:</h3>
+    <div id="alerts"></div>
 
-@app.route('/')
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        var socket = io("http://localhost:5050");
+
+        socket.on("connect", function() {
+            console.log("Connected to server");
+        });
+
+        socket.on("prediction", function(data) {
+            console.log("Received in browser:", data);
+
+            var div = document.getElementById("alerts");
+
+            if (data.prediction == 1) {
+                div.innerHTML += "<p style='color:red;font-weight:bold;'>⚠ ATTACK DETECTED (Prob: " 
+                                 + data.probability.toFixed(2) + ")</p>";
+            } else {
+                div.innerHTML += "<p style='color:green;'>Normal Traffic (Prob: " 
+                                 + data.probability.toFixed(2) + ")</p>";
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+@app.route("/")
 def index():
-    return render_template('dashboard.html')
+    return render_template_string(HTML)
 
-@socketio.on('new_prediction')
-def handle_new_prediction(data):
-    # Accept either JSON string or dict
-    if isinstance(data, str):
-        try:
-            payload = json.loads(data)
-        except Exception:
-            print("⚠️ Received non-json string:", data)
-            return
-    else:
-        payload = data
+@socketio.on("prediction")
+def handle_prediction(data):
+    print("Received prediction:", data)
+    socketio.emit("prediction", data)
 
-    live_data.append(payload)
-    print("📊 New data received:", payload)
-
-    # 2. This line is changed from 'socketio.emit' to just 'emit'
-    emit('update_dashboard', payload, broadcast=True)
-
-if __name__ == '__main__':
-    print("🚀 Flask dashboard running on http://localhost:5000")
-    # 3. This 'use_reloader=False' stops the server from restarting
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=5050)
