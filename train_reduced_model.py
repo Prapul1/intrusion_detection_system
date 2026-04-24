@@ -16,9 +16,30 @@ print(df.head(), "\n")
 print("📊 Original Label Distribution:")
 print(df["label"].value_counts(), "\n")
 
-# 3️⃣ Separate features and labels
-X = df.drop("label", axis=1)
+# 3️⃣ Select only the features that detector.py will extract
+# CRITICAL: These must match exactly what detector.py extracts in preprocess_and_predict()
+REQUIRED_FEATURES = [
+    'ip.len',
+    'ip.proto',
+    'tcp.len',
+    'udp.length',
+    'src_port',
+    'dst_port'
+]
+
+# Check if all required features exist
+missing_features = [f for f in REQUIRED_FEATURES if f not in df.columns]
+if missing_features:
+    print(f"⚠️ WARNING: Missing features in training data: {missing_features}")
+    print("Available columns:", df.columns.tolist())
+    print("\n❌ ERROR: Training data must contain all required features!")
+    print("Required features:", REQUIRED_FEATURES)
+    raise ValueError(f"Missing required features: {missing_features}")
+
+# Use only the required features (matching detector.py)
+X = df[REQUIRED_FEATURES]
 y = df["label"]
+print(f"✅ Using {len(REQUIRED_FEATURES)} features matching detector.py: {REQUIRED_FEATURES}")
 
 # 4️⃣ Scale numeric features
 scaler = StandardScaler()

@@ -1,3 +1,0 @@
-src_port,dst_port,packet_length,protocol,inter_arrival_time,tcp_flags,prediction
-443,51820,120,6,0.002,24,attack
-80,49152,450,6,0.004,18,attack
