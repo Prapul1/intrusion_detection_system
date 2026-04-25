@@ -1,7 +1,31 @@
-# Ignore the data folder
-data/
+# Virtual environment
+venv/
+.env/
 
-# Ignore IDE files
-.idea/
-processed/
+# IDE
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+logs/
+
+# Data files
+data/
+*.csv
+
+# Capture files
+*.pcap
+*.pcapng
+
+# Model artifacts
+*.pkl
 models/
+
+# Outputs
+predictions/
+results/
